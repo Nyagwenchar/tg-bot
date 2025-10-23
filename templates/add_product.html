@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Add Product - Crypto Store Admin{% endblock %}
+
+{% block content %}
+<h1>Add New Product</h1>
+
+<div class="card">
+    <form method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="name">Product Name *</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" name="description"></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="price">Price (in crypto) *</label>
+            <input type="number" id="price" name="price" step="0.00000001" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="image">Product Image</label>
+            <input type="file" id="image" name="image" accept="image/*">
+        </div>
+        
+        <button type="submit" class="btn btn-success">💾 Save Product</button>
+        <a href="/products" class="btn btn-danger">❌ Cancel</a>
+    </form>
+</div>
+{% endblock %}

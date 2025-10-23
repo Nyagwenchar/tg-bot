@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Products - Crypto Store Admin{% endblock %}
+
+{% block content %}
+<h1>Products Management</h1>
+
+<div style="margin-bottom: 20px;">
+    <a href="/products/add" class="btn btn-primary">➕ Add New Product</a>
+</div>
+
+<div class="card">
+    {% if products %}
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Image</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr>
+                    <td>{{ product.id }}</td>
+                    <td>
+                        {% if product.image_path %}
+                            <img src="/{{ product.image_path }}" class="product-image" alt="{{ product.name }}">
+                        {% else %}
+                            No image
+                        {% endif %}
+                    </td>
+                    <td>{{ product.name }}</td>
+                    <td>{{ product.description[:50] }}{% if product.description|length > 50 %}...{% endif %}</td>
+                    <td>{{ product.price }} crypto</td>
+                    <td>
+                        {% if product.active %}
+                            <span class="status-badge status-approved">Active</span>
+                        {% else %}
+                            <span class="status-badge status-rejected">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ product.created_at }}</td>
+                    <td>
+                        <a href="/products/edit/{{ product.id }}" class="btn btn-warning">✏️ Edit</a>
+                        {% if product.active %}
+                        <form method="POST" action="/products/delete/{{ product.id }}" style="display:inline;">
+                            <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure?')">🗑️ Delete</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No products yet. <a href="/products/add">Add your first product</a></p>
+    {% endif %}
+</div>
+{% endblock %}

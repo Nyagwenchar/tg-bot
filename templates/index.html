@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Crypto Store Admin{% endblock %}
+
+{% block content %}
+<h1>Dashboard</h1>
+
+<div class="stats">
+    <div class="stat-card">
+        <h3>{{ products|length }}</h3>
+        <p>Total Products</p>
+    </div>
+    <div class="stat-card">
+        <h3>{{ orders|length }}</h3>
+        <p>Total Orders</p>
+    </div>
+    <div class="stat-card">
+        <h3>{{ pending_orders|length }}</h3>
+        <p>Pending Orders</p>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Recent Pending Orders</h2>
+    {% if pending_orders %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>User</th>
+                    <th>Product</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in pending_orders[:10] %}
+                <tr>
+                    <td>#{{ order.id }}</td>
+                    <td>@{{ order.username or 'Unknown' }}</td>
+                    <td>{{ order.product_name }}</td>
+                    <td>{{ order.price }} crypto</td>
+                    <td><span class="status-badge status-{{ order.status }}">{{ order.status }}</span></td>
+                    <td>{{ order.created_at }}</td>
+                    <td>
+                        <form method="POST" action="/orders/approve/{{ order.id }}" style="display:inline;">
+                            <button type="submit" class="btn btn-success">✅ Approve</button>
+                        </form>
+                        <form method="POST" action="/orders/reject/{{ order.id }}" style="display:inline;">
+                            <button type="submit" class="btn btn-danger">❌ Reject</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No pending orders at the moment.</p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>Quick Actions</h2>
+    <a href="/products/add" class="btn btn-primary">➕ Add New Product</a>
+    <a href="/orders" class="btn btn-primary">📋 View All Orders</a>
+    <a href="/products" class="btn btn-primary">🛍️ Manage Products</a>
+</div>
+{% endblock %}
