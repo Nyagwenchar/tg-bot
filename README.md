@@ -75,8 +75,15 @@ The bot and admin panel will start automatically. Access the admin panel at:
 3. Set the following:
    - **Build Command**: `pip install -r requirements.txt`
    - **Start Command**: `python main.py`
-4. Add environment variables in Render settings
+4. Add environment variables in Render settings:
+   - `TELEGRAM_BOT_TOKEN` - Your bot token from @BotFather
+   - `ADMIN_TELEGRAM_ID` - Your Telegram user ID
+   - `CRYPTO_ADDRESS` - Your crypto wallet address
+   - `ADMIN_PASSWORD` - A strong password for admin panel
+   - `ADMIN_PANEL_PORT` - Set to `5000`
 5. Deploy!
+
+**Note**: The `render.yaml` file is included for easy deployment, but you'll still need to add the secret environment variables manually in Render's dashboard.
 
 ### Deploying on Replit
 

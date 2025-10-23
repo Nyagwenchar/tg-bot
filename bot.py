@@ -147,7 +147,7 @@ async def admin_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await update.message.reply_text(text, parse_mode='Markdown')
 
-def run_bot():
+async def run_bot():
     token = os.getenv('TELEGRAM_BOT_TOKEN')
     if not token:
         logger.error("TELEGRAM_BOT_TOKEN not set!")
@@ -162,7 +162,8 @@ def run_bot():
     application.add_handler(CallbackQueryHandler(buy_product, pattern="^buy_"))
     
     logger.info("Bot started!")
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+    await application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == '__main__':
-    run_bot()
+    import asyncio
+    asyncio.run(run_bot())
