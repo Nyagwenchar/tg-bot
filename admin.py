@@ -1,6 +1,8 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, session
 from werkzeug.utils import secure_filename
+from werkzeug.security import check_password_hash, generate_password_hash
+from functools import wraps
 from database import Database
 from dotenv import load_dotenv
 import asyncio
@@ -14,17 +16,52 @@ app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD')
+
+if not ADMIN_PASSWORD:
+    print("ERROR: ADMIN_PASSWORD environment variable is not set!")
+    print("Please set ADMIN_PASSWORD in your environment variables to secure your admin panel.")
+    import sys
+    sys.exit(1)
 
 db = Database()
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'logged_in' not in session:
+            flash('Please log in to access this page.', 'error')
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        password = request.form.get('password')
+        if password == ADMIN_PASSWORD:
+            session['logged_in'] = True
+            flash('Successfully logged in!', 'success')
+            return redirect(url_for('index'))
+        else:
+            flash('Invalid password!', 'error')
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.pop('logged_in', None)
+    flash('Successfully logged out.', 'success')
+    return redirect(url_for('login'))
+
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 @app.route('/')
+@login_required
 def index():
     products = db.get_all_products(active_only=False)
     orders = db.get_all_orders()
@@ -32,11 +69,13 @@ def index():
     return render_template('index.html', products=products, orders=orders, pending_orders=pending_orders)
 
 @app.route('/products')
+@login_required
 def products():
     all_products = db.get_all_products(active_only=False)
     return render_template('products.html', products=all_products)
 
 @app.route('/products/add', methods=['GET', 'POST'])
+@login_required
 def add_product():
     if request.method == 'POST':
         name = request.form.get('name')
@@ -70,6 +109,7 @@ def add_product():
     return render_template('add_product.html')
 
 @app.route('/products/edit/<int:product_id>', methods=['GET', 'POST'])
+@login_required
 def edit_product(product_id):
     product = db.get_product(product_id)
     if not product:
@@ -108,6 +148,7 @@ def edit_product(product_id):
     return render_template('edit_product.html', product=product)
 
 @app.route('/products/delete/<int:product_id>', methods=['POST'])
+@login_required
 def delete_product(product_id):
     product = db.get_product(product_id)
     if product:
@@ -118,11 +159,13 @@ def delete_product(product_id):
     return redirect(url_for('products'))
 
 @app.route('/orders')
+@login_required
 def orders_page():
     all_orders = db.get_all_orders()
     return render_template('orders.html', orders=all_orders)
 
 @app.route('/orders/approve/<int:order_id>', methods=['POST'])
+@login_required
 def approve_order(order_id):
     order = db.get_order(order_id)
     if not order:
@@ -156,6 +199,7 @@ def approve_order(order_id):
     return redirect(url_for('orders_page'))
 
 @app.route('/orders/reject/<int:order_id>', methods=['POST'])
+@login_required
 def reject_order(order_id):
     order = db.get_order(order_id)
     if not order:

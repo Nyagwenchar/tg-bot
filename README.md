@@ -32,6 +32,7 @@ Create a `.env` file in the project root with the following:
 TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
 ADMIN_TELEGRAM_ID=your_telegram_user_id_here
 CRYPTO_ADDRESS=your_crypto_wallet_address_here
+ADMIN_PASSWORD=your_strong_admin_password_here
 ADMIN_PANEL_PORT=5000
 ```
 
@@ -55,10 +56,15 @@ The bot and admin panel will start automatically. Access the admin panel at:
 ### For Admins (Web Panel)
 
 1. Open the admin panel in your browser
-2. Add products with images and descriptions
-3. Monitor pending orders on the dashboard
-4. Approve or reject orders (customers are notified automatically)
-5. View all orders and products
+2. Login with your admin password
+3. Add products with images and descriptions
+4. Monitor pending orders on the dashboard
+5. **Payment Verification**:
+   - Check your crypto wallet for incoming payments
+   - Match payment amount with order price
+   - Approve order once payment confirmed
+6. Orders can be approved or rejected (customers are notified automatically)
+7. View all orders and products history
 
 ## Deployment
 
@@ -108,8 +114,10 @@ The application uses SQLite with two main tables:
 
 - Never commit your `.env` file
 - Keep your bot token and API keys secret
+- Use a strong password for ADMIN_PASSWORD
 - For production, use environment variables
-- Consider implementing proper authentication for the admin panel
+- Admin panel requires password authentication
+- Payment verification is manual - always verify crypto wallet before approving orders
 
 ## Support
 
