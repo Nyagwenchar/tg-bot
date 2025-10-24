@@ -42,12 +42,17 @@ def login_required(f):
 def login():
     if request.method == 'POST':
         password = request.form.get('password')
-        if password == ADMIN_PASSWORD:
+        
+        # --- MODIFICATION HERE ---
+        # Securely check the hashed password
+        if ADMIN_PASSWORD and check_password_hash(ADMIN_PASSWORD, password):
             session['logged_in'] = True
             flash('Successfully logged in!', 'success')
             return redirect(url_for('index'))
         else:
             flash('Invalid password!', 'error')
+        # --- END MODIFICATION ---
+            
     return render_template('login.html')
 
 @app.route('/logout')

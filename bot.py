@@ -22,7 +22,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         f'👋 Welcome to our Crypto Store, {user.first_name}!\n\n'
         f'Use /catalog to browse products\n'
-        f'Use /orders to view your orders'
+        f'Use /orders to view your orders\n'
+        f'Use /help for more commands.'
     )
 
 async def catalog(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -147,6 +148,92 @@ async def admin_orders(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await update.message.reply_text(text, parse_mode='Markdown')
 
+# --- NEW FUNCTIONS START ---
+
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Sends a help message."""
+    await update.message.reply_text(
+        "Welcome to our Crypto Store!\n\n"
+        "Here are the available commands:\n"
+        "/start - Start the bot\n"
+        "/catalog - Browse our products\n"
+        "/orders - View your order history\n"
+        "/cancel - Cancel a pending order\n"
+        "/help - Show this help message"
+    )
+
+async def cancel_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Allows a user to cancel a pending order."""
+    user_id = update.effective_user.id
+    all_orders = db.get_all_orders()
+    
+    # Find orders that are 'pending'
+    user_pending_orders = [
+        o for o in all_orders 
+        if o['user_id'] == user_id and o['status'] == 'pending'
+    ]
+    
+    if not user_pending_orders:
+        await update.message.reply_text('📭 You have no pending orders to cancel.')
+        return
+
+    keyboard = []
+    for order in user_pending_orders:
+        keyboard.append([
+            InlineKeyboardButton(
+                f"❌ Cancel Order #{order['id']} ({order['product_name']})", 
+                callback_data=f"cancel_{order['id']}"
+            )
+        ])
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text(
+        "👇 Select a pending order to cancel:", 
+        reply_markup=reply_markup
+    )
+
+async def cancel_order_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handles the callback for canceling an order."""
+    query = update.callback_query
+    await query.answer()
+    
+    order_id = int(query.data.split('_')[1])
+    order = db.get_order(order_id)
+    
+    if not order:
+        await query.edit_message_text(text='❌ Order not found.')
+        return
+    
+    if order['user_id'] != query.from_user.id:
+        await query.edit_message_text(text='❌ This is not your order.')
+        return
+        
+    if order['status'] != 'pending':
+        await query.edit_message_text(text=f"This order can no longer be canceled. (Status: {order['status']})")
+        return
+    
+    # Use the existing reject_order function from database.py
+    db.reject_order(order_id) 
+    
+    await query.edit_message_text(
+        text=f"✅ Order #{order_id} has been canceled."
+    )
+    
+    # Notify admin
+    if ADMIN_ID:
+        try:
+            admin_text = (
+                f"🔔 ORDER CANCELED BY USER\n\n"
+                f"Order ID: {order_id}\n"
+                f"User: @{query.from_user.username} (ID: {query.from_user.id})\n"
+            )
+            await context.bot.send_message(chat_id=ADMIN_ID, text=admin_text)
+        except Exception as e:
+            logger.error(f"Error sending admin notification for cancel: {e}")
+
+# --- NEW FUNCTIONS END ---
+
+
 async def run_bot():
     token = os.getenv('TELEGRAM_BOT_TOKEN')
     if not token:
@@ -159,6 +246,13 @@ async def run_bot():
     application.add_handler(CommandHandler("catalog", catalog))
     application.add_handler(CommandHandler("orders", orders))
     application.add_handler(CommandHandler("admin_orders", admin_orders))
+    
+    # --- HANDLER MODIFICATIONS START ---
+    application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("cancel", cancel_order))
+    application.add_handler(CallbackQueryHandler(cancel_order_callback, pattern="^cancel_"))
+    # --- HANDLER MODIFICATIONS END ---
+    
     application.add_handler(CallbackQueryHandler(buy_product, pattern="^buy_"))
     
     logger.info("Bot started!")
